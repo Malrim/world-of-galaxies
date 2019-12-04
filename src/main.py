@@ -43,7 +43,7 @@ def quit_program():
 
 # region Main menu
 
-def menu_loop():
+def main_menu():
     is_menu = True
     while is_menu:
         for event in pygame.event.get():
@@ -54,11 +54,12 @@ def menu_loop():
 
 # region Game
 
-# Content
+#region Load content
+
 background_img = pygame.image.load(get_content("background.png"))
 player_img = pygame.image.load(get_content("player.png"))
 
-# Functions
+#endregion
 
 bg_y = 0
 def scrolling_background_draw(img, scrolling_speed):
@@ -70,55 +71,92 @@ def scrolling_background_draw(img, scrolling_speed):
     else:
         bg_y = 0
 
-# Classes
+#region Classes
 
-class Player:
+class Component:
 
-    def __init__(self, health, number_laser, start_x, start_y, img):
-        self.health = health
-        self.number_laser = number_laser
-        self.x = start_x
-        self.y = start_y
+    def __init__(self, pos_x, pos_y, img):
+        self.pos_x = pos_x
+        self.pos_y = pos_y
         self.img = img
 
-    def movement(self, keys, speed):
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            self.x += speed
-        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            self.x -= speed
-        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            self.y += speed
-        elif keys[pygame.K_w] or keys[pygame.K_UP]:
-            self.y -= speed
+    def update(self):
+        pass
 
     def draw(self):
-        window.blit(self.img, (self.x, self.y))
+        window.blit(self.img, (self.pos_x, self.pos_y))
+
+class Ship(Component):
+
+    def __init__(self, health, number_lasers, speed, pos_x, pos_y, img):
+        super().__init__(pos_x, pos_y, img)
+        self.health = health
+        self.max_health = health
+        self.number_lasers = number_lasers
+        self.max_number_lasers = number_lasers
+        self.speed = speed
+
+class Player(Ship):
+
+    def __init__(self, health, number_lasers, speed, pos_x, pos_y, img):
+        super().__init__(health, number_lasers, speed, pos_x, pos_y, img)
+
+    def update(self):
+        self.movement()  # player movement (inputs)
+
+    def movement(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            self.pos_x += self.speed
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            self.pos_x -= self.speed
+        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            self.pos_y += self.speed
+        elif keys[pygame.K_w] or keys[pygame.K_UP]:
+            self.pos_y -= self.speed
+
+class Laser:
+
+    def __init__(self, start_x, start_y, speed, img):
+        self.x = start_x
+        self.y = start_y
+        self.speed = speed
+        self.img = img
+
+        window.blit(self.img, start_x, start_y)
+
+#endregion
+
+components = []
 
 # Initialize
-player = Player(100, 50, (WIDTH_WIN // 2) - player_img.get_width() // 2, HEIGHT_WIN - 100, player_img)
+player = Player(100, 50, 0.5, (WIDTH_WIN // 2) - player_img.get_width() // 2, HEIGHT_WIN - 100, player_img)
+components.append(player)
 
 # Game loop
-def game_loop():
-    x = 0
+def game():
     is_game = True
     while is_game:
         # events / inputs
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_program()
-        keys = pygame.key.get_pressed()
 
-        player.movement(keys, 0.5)
+        # updating components
+        for c in components:
+            c.update()
 
-        # drawing
+        # drawing components
         scrolling_background_draw(background_img, 0.5)
-        player.draw()
+        for c in components:
+            c.draw()
 
         pygame.display.update()
 
 # endregion
 
 # Main loop
-#menu_loop()
-game_loop()
+#main_menu()
+game()
 quit_program()
