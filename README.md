@@ -17,7 +17,7 @@ Loď má vysoce účinný laser a ochranný štít, který si lze aktivovat pomo
 - **Programovací jazyk:** Python
 - **Knihovna:** [PyGame](https://www.pygame.org/)
 
-<img src="content/doc/preview.png" height="444" width="675" />
+<img src="content/doc/preview.png" width="482" height="444" />
 
 ## Ovládání
 
