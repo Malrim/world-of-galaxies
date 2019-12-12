@@ -54,22 +54,19 @@ def main_menu():
 
 # region Game
 
+components = []
+
+def add_component(component):
+    if components.count(component) == 0:
+        components.append(component)
+
 #region Load content
 
 background_img = pygame.image.load(get_content("background.png"))
 player_img = pygame.image.load(get_content("player.png"))
+player_laser_img = pygame.image.load(get_content("player_laser.png"))
 
 #endregion
-
-bg_y = 0
-def scrolling_background_draw(img, scrolling_speed):
-    global bg_y
-    window.blit(img, (0, bg_y))
-    window.blit(img, (0, -img.get_rect().height + bg_y))
-    if bg_y < HEIGHT_WIN:
-        bg_y += scrolling_speed
-    else:
-        bg_y = 0
 
 #region Classes
 
@@ -86,27 +83,45 @@ class Component:
     def draw(self):
         window.blit(self.img, (self.pos_x, self.pos_y))
 
+class Background(Component):
+
+    def __init__(self, scrolling_speed, pos_x, pos_y, img):
+        super().__init__(pos_x, pos_y, img)
+        self.scrolling_speed = scrolling_speed
+
+    def update(self):
+        if self.pos_y < HEIGHT_WIN:
+            self.pos_y += self.scrolling_speed
+        else:
+            self.pos_y = 0
+
+    def draw(self):
+        window.blit(self.img, (self.pos_x, self.pos_y))
+        window.blit(self.img, (self.pos_x, -self.img.get_rect().height + self.pos_y))
+
 class Ship(Component):
 
-    def __init__(self, health, number_lasers, speed, pos_x, pos_y, img):
+    def __init__(self, health, number_lasers, speed, shoot_delay, pos_x, pos_y, img):
         super().__init__(pos_x, pos_y, img)
         self.health = health
         self.max_health = health
         self.number_lasers = number_lasers
         self.max_number_lasers = number_lasers
         self.speed = speed
+        self.shoot_delay = shoot_delay
+        self.last_shot = pygame.time.get_ticks()
 
 class Player(Ship):
 
-    def __init__(self, health, number_lasers, speed, pos_x, pos_y, img):
-        super().__init__(health, number_lasers, speed, pos_x, pos_y, img)
+    def __init__(self, health, number_lasers, speed, shoot_delay, pos_x, pos_y, img):
+        super().__init__(health, number_lasers, speed, shoot_delay, pos_x, pos_y, img)
 
     def update(self):
-        self.movement()  # player movement (inputs)
-
-    def movement(self):
         keys = pygame.key.get_pressed()
 
+        self.movement(keys)
+
+    def movement(self, keys):
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.pos_x += self.speed
         elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
@@ -116,23 +131,36 @@ class Player(Ship):
         elif keys[pygame.K_w] or keys[pygame.K_UP]:
             self.pos_y -= self.speed
 
-class Laser:
+        if keys[pygame.K_SPACE]:
+            self.shoot()
 
-    def __init__(self, start_x, start_y, speed, img):
-        self.x = start_x
-        self.y = start_y
+    def shoot(self):
+        time_now = pygame.time.get_ticks()
+        if time_now - self.last_shot > self.shoot_delay:
+            self.last_shot = time_now
+            x = (self.pos_x + self.img.get_width() // 2) - player_laser_img.get_width() // 2
+            y = self.pos_y - player_laser_img.get_height()
+            laser = Laser(1, -1, x, y, player_laser_img)
+            add_component(laser)
+
+class Laser(Component):
+
+    def __init__(self, speed, direction, pos_x, pos_y, img):
+        super().__init__(pos_x, pos_y, img)
         self.speed = speed
-        self.img = img
+        self.direction = direction
 
-        window.blit(self.img, start_x, start_y)
+    def update(self):
+        self.pos_y += (self.speed * self.direction)
 
 #endregion
 
-components = []
+# Initialize components
+background = Background(0.5, 0, 0, background_img)
+player = Player(100, 50, 0.5, 250, (WIDTH_WIN // 2) - player_img.get_width() // 2, HEIGHT_WIN - 100, player_img)
 
-# Initialize
-player = Player(100, 50, 0.5, (WIDTH_WIN // 2) - player_img.get_width() // 2, HEIGHT_WIN - 100, player_img)
-components.append(player)
+add_component(background)
+add_component(player)
 
 # Game loop
 def game():
@@ -148,7 +176,6 @@ def game():
             c.update()
 
         # drawing components
-        scrolling_background_draw(background_img, 0.5)
         for c in components:
             c.draw()
 
