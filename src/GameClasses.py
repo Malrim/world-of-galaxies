@@ -1,5 +1,28 @@
 import pygame, random
 
+#region CONSTANTS
+
+BG_SCROLLING_SPEED = 3
+
+PLAYER_HEALTH = 3
+PLAYER_SPEED = 5
+PLAYER_SHOOT_DELAY = 250
+PLAYER_SCORE = 10
+PLAYER_LASER_SPEED = 8
+PLAYER_LASER_DAMAGE = -1
+
+SHIPS_CRASH_DAMAGE = -1
+
+ENEMY_HEALTH = 1
+ENEMY_SPEED = 3
+ENEMY_SHOOT_DELAY = 500
+ENEMY_LASER_SPEED = 8
+ENEMY_LASER_DAMAGE = -1
+
+ENEMIES_AND_ASTEROIDS_GEN = 1000
+
+#endregion
+
 class Background:
 
     def __init__(self, scrolling_speed, start_x, start_y, img):
@@ -55,11 +78,15 @@ class Ship(Component):
     def get_health(self):
         return self.health
 
+    def add_health(self, amount):
+        self.health += amount
+
 class Laser(Component):
 
-    def __init__(self, speed, direction, start_x, start_y, img):
+    def __init__(self, speed, damage, direction, start_x, start_y, img):
         super().__init__(start_x, start_y, img)
         self.speed = speed
+        self.damage = damage
         self.direction = direction
 
     def update(self, height_win):
@@ -69,14 +96,17 @@ class Laser(Component):
         if self.rect.bottom < 0 or self.rect.top > height_win:
             self.kill()
 
+    def get_damage(self):
+        return self.damage
+
 class Player(Ship):
 
-    def __init__(self, health, number_lasers, speed, shoot_delay, start_x, start_y, img, laser_img):
+    def __init__(self, health, speed, shoot_delay, start_x, start_y, img, laser_img):
         super().__init__(health, speed, shoot_delay, start_x, start_y, img, laser_img)
-        self.number_lasers = number_lasers
-        self.max_number_lasers = number_lasers
+        self.score = 0
 
     def update(self, components, player_lasers, enemies, enemies_lasers):
+        # control player
         keys = pygame.key.get_pressed()
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.rect.x += self.speed
@@ -90,7 +120,11 @@ class Player(Ship):
             self.shoot(components, player_lasers)
 
         self.broadcast_rect(enemies)
-        self.collide_with_enemy_laser(enemies_lasers)
+
+        # check collisions
+        self.check_collide_with_enemy(enemies)
+        self.check_collide_with_enemy_laser(enemies_lasers)
+        self.check_collide_player_laser_with_enemy(player_lasers, enemies)
 
     def shoot(self, components, player_lasers):
         time_now = pygame.time.get_ticks()
@@ -98,17 +132,33 @@ class Player(Ship):
             self.last_shot = time_now
             x = (self.rect.x + self.image.get_width() // 2) - self.laser_img.get_width() // 2
             y = self.rect.y - self.laser_img.get_height()
-            laser = Laser(8, -1, x, y, self.laser_img)
+            laser = Laser(PLAYER_LASER_SPEED, PLAYER_LASER_DAMAGE, -1, x, y, self.laser_img)
             components.add(laser)
             player_lasers.add(laser)
 
-    def collide_with_enemy_laser(self, enemies_lasers):
-        if pygame.sprite.spritecollide(self, enemies_lasers, True):
-            print("hit!")
+    def check_collide_with_enemy(self, enemies):
+        for crash in pygame.sprite.spritecollide(self, enemies, False):
+            self.add_health(SHIPS_CRASH_DAMAGE)
+            crash.add_health(SHIPS_CRASH_DAMAGE)
+
+    def check_collide_with_enemy_laser(self, enemies_lasers):
+        for hit in pygame.sprite.spritecollide(self, enemies_lasers, False):
+            self.add_health(hit.get_damage())
+            hit.kill()
+
+    def check_collide_player_laser_with_enemy(self, player_lasers, enemies):
+        for player_laser, enemy_ships in pygame.sprite.groupcollide(player_lasers, enemies, False, False).items():
+            for enemy in enemy_ships:
+                enemy.add_health(player_laser.get_damage())
+                self.score += PLAYER_SCORE
+                player_laser.kill()
 
     def broadcast_rect(self, enemies):
         for enemy in enemies:
             enemy.recieve_player_rect(self.rect)
+
+    def get_score(self):
+        return self.score
 
 class Enemy(Ship):
 
@@ -124,15 +174,21 @@ class Enemy(Ship):
             self.kill()
 
     def shoot(self, components, enemies_lasers):
-        if (self.player_rect.x + self.player_rect.width // 2) >= self.rect.x and self.player_rect.x <= (self.rect.x + self.image.get_width() // 2):
+        if (self.player_rect.x + self.player_rect.width // 2) >= self.rect.x and \
+                self.player_rect.x <= (self.rect.x + self.image.get_width() // 2):
             time_now = pygame.time.get_ticks()
             if time_now - self.last_shot > self.shoot_delay:
                 self.last_shot = time_now
                 x = (self.rect.x + self.image.get_width() // 2) - self.laser_img.get_width() // 2
                 y = self.rect.y + self.image.get_height()
-                laser = Laser(8, 1, x, y, self.laser_img)
+                laser = Laser(ENEMY_LASER_SPEED, ENEMY_LASER_DAMAGE, 1, x, y, self.laser_img)
                 components.add(laser)
                 enemies_lasers.add(laser)
+
+    def add_health(self, amount):
+        super().add_health(amount)
+        if self.health <= 0:
+            self.kill()
 
     def recieve_player_rect(self, rect):
         self.player_rect = rect
@@ -149,10 +205,6 @@ class EnemiesAndAsteroidsGenerator:
             self.last_object = time_now
             x = random.randrange(width_win - enemy_img.get_width())
             y = -(enemy_img.get_height() + 10)
-            enemy = Enemy(100, 3, 500, x, y, enemy_img, enemy_laser_img)
+            enemy = Enemy(ENEMY_HEALTH, ENEMY_SPEED, ENEMY_SHOOT_DELAY, x, y, enemy_img, enemy_laser_img)
             components.add(enemy)
             enemies.add(enemy)
-
-
-#region UI classes
-#endregion
