@@ -1,5 +1,11 @@
 import pygame
 
+# region CONSTANTS
+
+BLACK_COLOR = (0, 0, 0)
+
+# endregion
+
 class UIComponent:
 
     def __init__(self, pos_x, pos_y):
@@ -9,15 +15,24 @@ class UIComponent:
     def draw(self, win):
         pass
 
+    def get_x(self):
+        return self.pos_x
+
+    def get_y(self):
+        return self.pos_y
+
 class UIText(UIComponent):
 
-    def __init__(self, text, font, pos_x, pos_y):
+    def __init__(self, text, font, pos_x, pos_y, color=(255, 255, 255)):
         super().__init__(pos_x, pos_y)
         self.font = font
-        self.text = self.font.render(text, True, (255, 255, 255))
+        self.text = self.font.render(text, True, color)
+        self.color = color
 
-    def update_text(self, text):
-        self.text = self.font.render(text, True, (255, 255, 255))
+    def update_text(self, text, pos_x, pos_y):
+        self.pos_x = pos_x
+        self.pos_y = pos_y
+        self.text = self.font.render(text, True, self.color)
 
     def draw(self, win):
         win.blit(self.text, (self.pos_x, self.pos_y))
@@ -42,12 +57,16 @@ class UIButton(UIComponent):
         self.img = img_inactive
         self.img_inactive = img_inactive
         self.img_hover = img_hover
+        self.active = True
         self.clicked = clicked
 
         self.click = pygame.mouse.get_pressed()
         self.last_click = self.click
 
     def update(self):
+        if not self.active:
+            return
+
         mouse = pygame.mouse.get_pos()
         self.last_click = self.click
         self.click = pygame.mouse.get_pressed()
@@ -60,8 +79,14 @@ class UIButton(UIComponent):
             self.img = self.img_inactive
 
     def draw(self, win):
+        if not self.active:
+            return
+
         win.blit(self.img, (self.pos_x, self.pos_y))
         self.ui_text.draw(win)
+
+    def set_active(self, active):
+        self.active = active
 
 class PlayerHUD(UIComponent):
 
