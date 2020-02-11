@@ -302,6 +302,17 @@ Funkce pracují v následujícím pořadí:
     - zachycení vstupů
     - aktualizování komponent
     - vykreslení komponent
+    
+Skóre se ukládá do souboru v případě, že hráč prohrál a je větší než již uložené skóre:
+
+```python
+# metoda zapíše score do souboru
+def write_score_to_file(score, filename):
+    last_top_score = read_score_from_file(filename)
+    if score > last_top_score:
+        with open(filename, "w") as f:
+            f.write(str(score))
+```
 
 ### Soubor `GameClasses.py`
 
@@ -585,7 +596,6 @@ Soubor obsahuje třídy pro **User Interface**.
 
 - UIText
 - UIImage
-- UIButton
 - UIButton
 - PlayerHUD
 
