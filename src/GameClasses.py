@@ -55,6 +55,8 @@ class Component(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = start_x
         self.rect.y = start_y
+        self.explosion_sprites = None
+        self.explosion_sound = None
 
     def get_rect(self):
         return self.rect
@@ -85,6 +87,15 @@ class Component(pygame.sprite.Sprite):
 
     def get_img(self):
         return self.image
+
+    def explode(self, components):
+        self.explosion = Explosion(
+            (self.get_x() + self.image.get_width() / 2, self.get_y() + self.image.get_height() / 2),
+            self.explosion_sprites,
+            EXPLOSION_FRAME_RATE
+        )
+        components.add(self.explosion)
+        pygame.mixer.Sound.play(self.explosion_sound)
 
 class Ship(Component):
 
@@ -161,13 +172,7 @@ class Player(Ship):
 
         # úmrtí hráče
         if self.get_health() <= 0 and not self.death:
-            self.explosion = Explosion(
-                (self.get_x() + self.get_img().get_width() / 2, self.get_y() + self.get_img().get_height() / 2),
-                self.explosion_sprites,
-                EXPLOSION_FRAME_RATE
-            )
-            components.add(self.explosion)
-            pygame.mixer.Sound.play(self.explosion_sound)
+            self.explode(components)
             self.death = True
             self.set_x(width_win + 200)
 
@@ -189,7 +194,7 @@ class Player(Ship):
 
     def check_collide_with_meteorite(self, meteors, components):
         for crash in pygame.sprite.spritecollide(self, meteors, False):
-            crash.destory(components)
+            crash.destroy(components)
             self.add_health(SHIPS_CRASH_DAMAGE)
 
     def check_collide_with_enemy_laser(self, enemies_lasers):
@@ -207,7 +212,7 @@ class Player(Ship):
     def check_collide_player_laser_with_meteorite(self, player_lasers, meteors, components):
         for player_laser, meteorites in pygame.sprite.groupcollide(player_lasers, meteors, False, False).items():
             for meteor in meteorites:
-                meteor.destory(components)
+                meteor.destroy(components)
                 self.score += PLAYER_SCORE_METEOR
                 player_laser.kill()
 
@@ -235,13 +240,7 @@ class Enemy(Ship):
         self.shoot(components, enemies_lasers)
 
         if self.get_health() <= 0:
-            explosion = Explosion(
-                (self.get_x() + self.image.get_width() / 2, self.get_y() + self.image.get_height() / 2),
-                self.explosion_sprites,
-                EXPLOSION_FRAME_RATE
-            )
-            components.add(explosion)
-            pygame.mixer.Sound.play(self.explosion_sound)
+            self.explode(components)
             self.kill()
 
         # if the enemy is off-screen
@@ -278,21 +277,18 @@ class Meteorite(Component):
         self.add_y(self.speed)
 
         self.image = pygame.transform.rotate(self.original_image, self.angle)
-        self.angle += 1 % 360  # po 359 se rotace začne opakovat od 0
+        self.angle = (self.angle + 1) % 360  # po 359 se rotace začne opakovat od 0
 
         # pokud je mimo obrazovku
         if self.get_rect().top > height_win:
             self.kill() # bude zničen
 
-    def destory(self, components):
-        explosion = Explosion(
-            (self.get_x() + self.image.get_width() / 2, self.get_y() + self.image.get_height() / 2),
-            self.explosion_sprites,
-            EXPLOSION_FRAME_RATE
-        )
-        components.add(explosion)
-        pygame.mixer.Sound.play(self.explosion_sound)
+    def destroy(self, components):
+        self.explode(components)
         self.kill()
+
+
+
 
 class EnemiesAndMeteoritesGenerator:
 
