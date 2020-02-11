@@ -421,7 +421,7 @@ Ovládání hráče:
             self.shoot(components, player_lasers)
 ```
 
-Kontrola kolizí s nepřátelskámi loďmi, laserama nepřátel a meteority:
+Kontrola kolizí s nepřátelskými loděmi, laserama nepřátel a meteority:
 ```python
         self.check_collide_with_enemy(enemies)
         self.check_collide_with_meteorite(meteors, components)
