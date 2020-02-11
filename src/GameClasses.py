@@ -277,7 +277,7 @@ class Meteorite(Component):
         self.add_y(self.speed)
 
         self.image = pygame.transform.rotate(self.original_image, self.angle)
-        self.angle += 1 % 360  # po 359 se rotace začne opakovat od 0
+        self.angle = (self.angle + 1) % 360  # po 359 se rotace začne opakovat od 0
 
         # pokud je mimo obrazovku
         if self.get_rect().top > height_win:
