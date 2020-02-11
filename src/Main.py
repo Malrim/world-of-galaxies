@@ -176,7 +176,7 @@ def game():
     # load content for game
     background_img = pygame.image.load(get_content("background.png"))
     bg_panel_score_img = pygame.image.load(get_content("bg_panel_score.png"))
-    bg_panel_lifes_img = pygame.image.load(get_content("bg_panel_lifes.png"))
+    bg_panel_lives_img = pygame.image.load(get_content("bg_panel_lives.png"))
     player_img = pygame.image.load(get_content("player.png"))
     player_laser_img = pygame.image.load(get_content("player_laser.png"))
     player_life_img = pygame.image.load(get_content("player_life.png"))
@@ -226,14 +226,14 @@ def game():
                         panel_score_x + (bg_panel_score_img.get_width() / 2) - (size_text[0] / 2),
                         panel_score_y + 45
                         )
-    panel_lifes_x = WIDTH_WIN - bg_panel_lifes_img.get_width() - 8
-    panel_lifes_y = HEIGHT_WIN - bg_panel_lifes_img.get_height() - 8
-    size_text = ui_font.size("Lifes:")
-    lifes_title = UIText("Lifes:", ui_font,
-                         panel_lifes_x + (bg_panel_lifes_img.get_width() / 2) - (size_text[0] / 2),
-                         panel_lifes_y + 15
+    panel_lives_x = WIDTH_WIN - bg_panel_lives_img.get_width() - 8
+    panel_lives_y = HEIGHT_WIN - bg_panel_lives_img.get_height() - 8
+    size_text = ui_font.size("Lives:")
+    lives_title = UIText("Lives:", ui_font,
+                         panel_lives_x + (bg_panel_lives_img.get_width() / 2) - (size_text[0] / 2),
+                         panel_lives_y + 15
                          )
-    player_hud = PlayerHUD(player.get_health(), player_life_img, panel_lifes_x + 35, panel_lifes_y + 45)
+    player_hud = PlayerHUD(player.get_health(), player_life_img, panel_lives_x + 35, panel_lives_y + 45)
 
     generator = EnemiesAndMeteoritesGenerator(ENEMIES_GEN,METEORITES_GEN,explosion_sprites,explosion_sound)
 
@@ -269,9 +269,9 @@ def game():
         background.draw(WINDOW)
         components.draw(WINDOW)
         WINDOW.blit(bg_panel_score_img, (panel_score_x, panel_score_y))
-        WINDOW.blit(bg_panel_lifes_img, (panel_lifes_x, panel_lifes_y))
+        WINDOW.blit(bg_panel_lives_img, (panel_lives_x, panel_lives_y))
         score_title.draw(WINDOW)
-        lifes_title.draw(WINDOW)
+        lives_title.draw(WINDOW)
         update_and_draw_ui(score_text, panel_score_x, bg_panel_score_img, player_hud, player)
 
         # check game over
