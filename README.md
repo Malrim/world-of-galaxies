@@ -25,6 +25,7 @@ Loď má vysoce účinný laser, kterým jednoduše ničí vše okolo.
 
 - **Pohyb:** WSAD nebo šipky
 - **Střelba:** mezerník
+- **ESC:** ukončení hry (návrat do menu)
 
 ## Dokumentace
 
